@@ -1,5 +1,6 @@
 import { useState, ChangeEvent, FormEvent } from 'react';
 import '../assets/styles/EquipmentForm.css';
+import DashboardView from './DashboardView';
 
 interface Equipment {
   id: string;
@@ -8,11 +9,24 @@ interface Equipment {
   preview: string;
 }
 
+// Add this interface to match what DashboardView expects
+interface EquipmentData {
+  id: string;
+  image: File;
+  status: 'already-purchased' | 'considering-purchasing';
+  preview: string;
+  name: string;
+  carbonImpact: number;
+  energyUsage: number;
+  recommendations: string[];
+}
+
 const EquipmentForm = () => {
   const [equipment, setEquipment] = useState<Equipment[]>([]);
   const [hoursOfOperation, setHoursOfOperation] = useState('');
   const [hasGreenLease, setHasGreenLease] = useState(false);
   const [miscInfo, setMiscInfo] = useState('');
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
   const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
@@ -60,12 +74,39 @@ const EquipmentForm = () => {
       miscInfo
     });
     
-    // Reset form after submission
-    // setEquipment([]);
-    // setHoursOfOperation('');
-    // setHasGreenLease(false);
-    // setMiscInfo('');
+    // Show dashboard view
+    setIsSubmitted(true);
   };
+
+  const handleBackToForm = () => {
+    setIsSubmitted(false);
+  };
+
+  if (isSubmitted) {
+    // Transform equipment data to match what DashboardView expects
+    const equipmentData: EquipmentData[] = equipment.map(item => ({
+      ...item,
+      name: `Equipment ${item.id.substring(0, 4)}`,
+      carbonImpact: Math.random() * 100, // Mock data
+      energyUsage: Math.random() * 500,  // Mock data
+      recommendations: [
+        "Reduce usage during peak hours",
+        "Consider energy-efficient alternatives"
+      ]
+    }));
+
+    return (
+      <DashboardView 
+        formData={{
+          equipment: equipmentData,
+          hoursOfOperation,
+          hasGreenLease,
+          miscInfo
+        }}
+        onBack={handleBackToForm}
+      />
+    );
+  }
 
   return (
     <div className="equipment-form-container">
@@ -156,7 +197,13 @@ const EquipmentForm = () => {
           />
         </div>
 
-        <button type="submit" className="submit-button">Submit</button>
+        <button 
+          type="submit" 
+          className="submit-button"
+          disabled={equipment.length === 0}
+        >
+          Analyze Carbon Footprint
+        </button>
       </form>
     </div>
   );
